@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Red Social - Publicaciones</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome Icons -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+  <!-- Estilos personalizados -->
+  <style>
+    /* Estilos generales */
+    body {
+      background-color: #1f1f1f; /* Fondo oscuro */
+      color: #fff; /* Texto blanco */
+    }
+    .card {
+      background-color: #212E36; /* Fondo de las tarjetas */
+      border: none;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+    .card-header {
+      background-color: #343a40; /* Encabezado de tarjeta más oscuro */
+      border-bottom: none;
+      color: #fff; /* Texto blanco */
+      display: flex;
+      justify-content: center;
+    }
+    .card-header h1 {
+      margin-bottom: 0;
+      font-size: 1.5rem;
+    }
+    .card-body {
+      background-color: #212E36; /* Cuerpo de tarjeta más oscuro */
+    }
+    .btn {
+      background-color: #1f1f1f; /* Botones de color azul */
+      border-color: #1f1f1f;
+      color: #fff;
+    }
+    .btn:hover {
+      background-color: #3685f3; /* Color de botón más oscuro al pasar el ratón */
+      border-color: #3685f3;
+    }
+    .text-primary {
+      color: #4dabf7 !important; /* Texto azul */
+    }
+    .text-muted {
+      color: #999 !important; /* Texto gris */
+    }
+
+    /* Estilos específicos para las publicaciones */
+    .publicacion {
+      background-color: #272727; /* Fondo más oscuro para las publicaciones */
+      border: none;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      transition: transform 0.3s ease;
+    }
+    .publicacion:hover {
+      transform: translateY(-5px);
+    }
+    .publicacion img {
+      max-width: 100%;
+      border-radius: 10px 10px 0 0;
+    }
+    .publicacion h2 {
+      margin-bottom: 5px;
+      font-size: 1.5rem;
+      color: #fff; /* Texto blanco */
+    }
+    .publicacion p {
+      margin-bottom: 0;
+      color: #999; /* Texto gris */
+    }
+
+    /* Estilos para los comentarios */
+    .comentarios-container {
+      background-color: #1f1f1f; /* Fondo oscuro */
+      border-radius: 10px;
+      padding: 10px;
+      margin-top: 10px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .accordion-item {
+      background-color: #343a40; /* Fondo de los elementos del acordeón */
+      border: none;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+    .accordion-button {
+      background-color: #4dabf7; /* Botones de color azul */
+      border-color: #4dabf7;
+      color: #fff;
+    }
+    .accordion-button:hover {
+      background-color: #3685f3; /* Color de botón más oscuro al pasar el ratón */
+      border-color: #3685f3;
+    }
+    .accordion-body {
+      background-color: #272727; /* Fondo más oscuro para el cuerpo del acordeón */
+      color: #999; /* Texto gris */
+    }
+    .response-form {
+      margin-top: 10px;
+    }
+    .response-form .btn-primary {
+      background-color: #4dabf7; /* Botones de color azul */
+      border-color: #4dabf7;
+    }
+    .response-form .btn-primary:hover {
+      background-color: #3685f3; /* Color de botón más oscuro al pasar el ratón */
+      border-color: #3685f3;
+    }
+  </style>
+</head>
+<body>
+  <div class="container mt-5">
+    <div class="row justify-content-center">
+      <div class="col-md-8">
+        <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <div class="username-container d-flex align-items-center">
+            <i class="bi bi-person username-icon me-2"></i>
+            <h1><%= @publicacion.user.username %></h1>
+          </div>
+        </div>
+      
+          <div class="card-body">
+            <div class="text-center mb-4">
+              <% if @publicacion.imagen.attached? %>
+                <%= image_tag @publicacion.imagen, width: 400, class: "img-fluid rounded" %>
+              <% end %>
+            </div>
+            <p class="lead text-center"><%= @publicacion.descripcion %></p>
+            <p class="text-muted text-center mb-4"><i class="bi bi-calendar-check"></i><%= @publicacion.created_at.strftime("%d/%m/%Y %H:%M") %></p>
+
+            <!-- contenedor para reaccionar -->
+            <!-- MOSTRAR REAACCIONES DESTACADAS -->   
+                <% destacadas = @publicacion.reactions.group(:reaction_type).count.sort_by { |_, v| -v }.first(3) %>
+                <% if destacadas.present? %>
+                  <div class="reacciones-destacadas">
+                    <%= link_to reacciones_path(publicacion_id: @publicacion.id), data: { turbo_frame: '_top' } do %>
+                      <% destacadas.each do |tipo, cantidad| %>
+                        <%= "#{tipo.humanize.capitalize}" "#{cantidad}" if tipo.present?  %>
+                      <% end %>
+                      
+                    <% end %>
+                  </div>
+                <% end %>
+            
+
+            <div class="d-flex justify-content-center mt-3">
+              <% if @publicacion.user.id == session[:user_id] || (Current.user && Current.user.admin?) %>
+                <%= link_to editar_publicacion_path(@publicacion), class: "btn btn-warning me-md-3 mb-2 mb-md-0", data: { turbo_frame: '_top' } do %>
+                  <i class="bi bi-pencil-fill me-1"></i> Editar
+                <% end %>
+              <% end %>
+
+              <% if @publicacion.user.id == session[:user_id] || (Current.user && Current.user.admin?) %>
+                <%= link_to eliminar_publicacion_path(@publicacion), class: "btn btn-danger me-md-3 mb-2 mb-md-0", data: { turbo_method: :delete, turbo_confirm: '¿Estás seguro?' } do %>
+                  <i class="bi bi-trash-fill me-1"></i> Eliminar
+                <% end %>
+              <% end %>
+
+              <!-- Agregar más botones según sea necesario -->
+
+              <% if @publicacion.user.id != session[:user_id] %>
+                <%= link_to usuario_path(@publicacion.user.username), class: "btn btn-primary me-md-3 mb-2 mb-md-0" do %>
+                  <i class="bi bi-person me-1"></i> Ver perfil 
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container mt-4">
+    <%= turbo_frame_tag 'comentarios' do %>
+      <h2 class="text-center mb-4">Comentarios(<%= @publicacion.comments.count %>)</h2>
+      <div class="comentarios-container">
+        <% @comments.order(created_at: :desc).each do |comment| %>
+          <div class="card mb-3">
+            <div class="card-body">
+              <p class="card-text"><strong><%= comment.user.username %>:</strong> <%= comment.content %></p>
+              <p class="card-text text-muted"><small><em>Publicado el <%= comment.created_at.strftime("%d de %B de %Y a las %H:%M") %></em></small></p>
+              <!-- Desplegable para respuestas -->
+              <div class="accordion" id="respuestasAccordion<%= comment.id %>">
+                <div class="accordion-item">
+                  <h2 class="accordion-header" id="headingRespuestas<%= comment.id %>">
+                    <button class="accordion-button collapsed" type="button" data-toggle="collapse" data-target="#collapseRespuestas<%= comment.id %>" aria-expanded="false" aria-controls="collapseRespuestas<%= comment.id %>">
+                      Ver Respuestas (<%= @respuestas.where(comment_id: comment.id).count %>)
+                    </button>
+                  </h2>
+                  <div id="collapseRespuestas<%= comment.id %>" class="accordion-collapse collapse" aria-labelledby="headingRespuestas<%= comment.id %>" data-parent="#respuestasAccordion<%= comment.id %>">
+                    <div class="accordion-body">
+                      <!-- Contenedor de respuestas -->
+                      <div class="respuestas-container">
+                        <% @respuestas.where(comment_id: comment.id).order(created_at: :desc).each do |respuesta| %>
+                          <span style="font-size: small;"> <%= respuesta.created_at.strftime("%d/%m/%Y %H:%M") %></span>
+                          <p class="card-text"><strong><%= respuesta.user.username %>:</strong> <%= respuesta.content %></p>
+                        <% end %>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- Contenedor para escribir respuesta -->
+              <div class="response-form mt-3">
+                <%= form_with model: Response.new, url: responses_path(comment_id: comment.id), class: "response-form" , data: { turbo_frame: '_top' }  do |form| %>
+                  <%= form.hidden_field :comment_id, value: comment.id %>
+                  <%= form.hidden_field :user_id, value: session[:user_id] %>
+                  <%= form.text_area :content, placeholder: "Escribe tu respuesta aquí...", class: "form-control mb-3" %>
+                  <%= form.submit "Responder", class: "btn btn-primary" %>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+
+      <%= form_with model: Comment.new, url: comments_path, class: "mt-4" , data: { turbo_frame: '_top' } do |form| %>
+        <%= form.hidden_field :publicacion_id, value: @publicacion.id %>
+        <%= form.hidden_field :user_id, value: session[:user_id] %>
+        <%= form.text_area :content, placeholder: "Escribe tu comentario aquí...", class: "form-control mb-3" %>
+        <%= form.submit "Comentar", class: "btn btn-primary" %>
+      <% end %>
+    <%end%>
+  </div>
+
+  <!-- Bootstrap JS (opcional, si lo necesitas) -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <!-- Script para el funcionamiento de los desplegables -->
+  <script>
+    $(document).ready(function() {
+      $('.accordion-button').click(function() {
+        $(this).toggleClass('collapsed');
+      });
+    });
+  </script>
+</body>
+</html>
